@@ -1,0 +1,6 @@
+TODO
+  handle url like /static*
+  serve static files => handle the file content type
+  add a view system
+  handle content type in the controller side
+
