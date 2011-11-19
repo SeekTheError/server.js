@@ -5,78 +5,96 @@ var port= 1337;
 var listenTo = "127.0.0.1";
 
 //route configuration
-Dispatcher = {}
+GET = {}
+POST = {}
+PUT = {}
+DELETE = {}
 
 var path = require('path');
 var fs = require('fs');
-Dispatcher["/static/.*"]= function () {
+var mime = require('mime');
+
+function _static() {
+  //use scope instead of this to have a single scope for the request
+  var scope=this;
   var filePath = '.' + this.requestItems.path;
-  var scope = this;
-  console.log("file path: "+filePath);
+  if(filePath == "./static/"){}
     path.exists(filePath, function(exists) {
     if (exists) {
             fs.readFile(filePath, function(error, content) {
                 if (error) {
-                    scope.res.writeHead(500);
-                    scope.res.end();
+                    _500.apply(scope);
                 }
                 else {
-                    scope.res.writeHead(200);
-                    scope.res.end(content, 'utf-8');
+                    var fileMime=mime.lookup(filePath);
+                    _wsc(scope,200,fileMime);
+                    _we(scope,content);
                 }
             });
         }
         else {
-  	    _404.apply(scope);
-            //scope.res.writeHead(404, { 'Content-Type': 'text/html' });
-            //scope.res.end("File Not Found", 'utf-8');
+  	    _404.apply(scope);;
         }
 });
 }
-Dispatcher["index.html"]= function () {_wsc(this,200,"text/plain");_we(this,"Hello World on HP");}
+
+// note, io.listen() will create a http server for you
+
+GET["/static/.*"]= _static;
+
 
 _404 =  function () {_wsc(this,404,  'text/plain');_we(this,"404, Page not found");}
+_500 =  function () {_wsc(this,500,  'text/plain');_we(this,"500, Server Error");}
 
-Dispatcher["/favicon.ico"] = function () { this.requestItems.path = "/static/favicon.ico"; Dispatcher["/static/.*"].apply(this);  }
+GET["/favicon.ico"] = function () { this.requestItems.path = "/static/favicon.ico"; GET["/static/.*"].apply(this);  }
 
-Dispatcher["_404"]= _404;
-
+GET["_404"]= _404;
+GET["_500"]= _500;
 
 
 //server
+var app = require('http').createServer(handler)
+  , io = require('socket.io').listen(app)
+  , fs = require('fs')
+app.listen(port);
 
-var http = require('http');
-http.Dispatcher=Dispatcher;
-http.createServer(function (req, res) {
+function handler(req, res) {
   //the content response
   var content;
   var requestItems=parseUri(req.url);
   var requestPath=Utils.stripTrailingSlash(requestItems.path);
-  console.log("request:"+requestPath);
-  var fToCall;
-  for (route in Dispatcher) {
-  if( requestPath == ""){fToCall = Dispatcher["index.html"]}
-  console.log("trying route: "+route);
+
+  var scope=Utils.createScope(res,req,requestItems);
+  console.log(req.method+" "+requestPath);
+  var fToCall;var httpMethod = Utils.defineMethod(req.method);
+  if(requestPath == ""){fToCall= httpMethod["/static/.*"];scope.requestItems.path = "/static/hp.html";}
+  
+  else for (route in httpMethod) {
+  //console.log("trying route: "+route);
   if (requestPath.match(route)){
-    fToCall = Dispatcher[route];
-    console.log("match, using route: "+route);
+    fToCall = httpMethod[route];
+    //console.log("match, using route: "+route);
     break;
   }
  }
   if( typeof fToCall === "undefined"){
-  fToCall= Dispatcher["_404"] ;
+  fToCall= GET["_404"] ;
   }
-  Utils.createScope(res,req,requestItems);
-  content = fToCall.apply(scope);
-}).listen(port,listenTo);
+  fToCall.apply(scope);
+}
 console.log("server running at "+listenTo+":"+port);
+
+
+io.sockets.on('connection', function (socket) {
+  socket.emit('news', { hello: 'world' });
+  socket.on('my other event', function (data) {
+    console.log(data);
+  });
+});
 
 ////////////////////////////////////////////////
 //UTILS part
 
-Constant = {}
-Constant.contentType= {}
-Constant.contentType.plainText = 'text/plain';
 
 Utils = {}
 
@@ -99,8 +117,16 @@ Utils.createScope= function (res,req,requestItems){
 Utils.writeStatusContentType = function (scope,status,contentType){
  scope.res.writeHead(status, {'Content-Type': contentType});
 }
-Utils.writeEnd = function(scope,content){
+Utils.writeEnd = function(scope,content,encoding){
+if(typeof encoding == "undefined"){encoding="utf-8";}
 scope.res.end(content);
+}
+
+Utils.defineMethod=function(requestMethod){
+  if(requestMethod == "GET") return GET;
+  if(requestMethod == "POST") return POST;
+  if(requestMethod == "PUT") return PUT;
+  if(requestMethod == "DELETE") return DELETE;
 }
 _wsc = Utils.writeStatusContentType ;
 _we  = Utils.writeEnd;
