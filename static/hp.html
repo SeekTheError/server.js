@@ -2,21 +2,22 @@
   <title>_</title>
   <script type="text/javascript" src="/static/jquery-1.7.min.js"></script></head>
   <script type="text/javascript" src="/static/_.js"></script></head>
-  <script type="text/javascript"></script>
+  <script type="text/javascript">
+  _ = new _({serverUrl:'http://localhost'});
+  /*_.addHandler("message",function (data) {
+  appendMessage("#chat_area",data)
+} );*/
+  </script>
   <style>
   body{background: black;color:green;font-family: monospace;}
   input{background: black;color:green;font-family: monospace;}
   </style>
   <script src="/socket.io/socket.io.js"></script>
-<script>
-  var socket = io.connect('http://localhost');
-  socket.on('news', function (data) {
-    console.log(data);
-    socket.emit('my other event', { my: 'data' });
-  });
-</script>
 </head>
 <body>
-<div id="content"></div>
-<input id="input"  type="text">
+<div id="title"></div>
+<div id=chat_container">
+<div id="chat_area"></div>
+<input id="input_message"  type="text">
+</div>
 </body>

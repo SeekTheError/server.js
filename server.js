@@ -18,7 +18,7 @@ function _static() {
   //use scope instead of this to have a single scope for the request
   var scope=this;
   var filePath = '.' + this.requestItems.path;
-  if(filePath == "./static/"){}
+  if(filePath == "./static/"){_403.apply(scope);return; }
     path.exists(filePath, function(exists) {
     if (exists) {
             fs.readFile(filePath, function(error, content) {
@@ -42,7 +42,7 @@ function _static() {
 
 GET["/static/.*"]= _static;
 
-
+_403 =  function () {_wsc(this,403,  'text/plain');_we(this,"403, Forbidden");}
 _404 =  function () {_wsc(this,404,  'text/plain');_we(this,"404, Page not found");}
 _500 =  function () {_wsc(this,500,  'text/plain');_we(this,"500, Server Error");}
 
@@ -86,11 +86,13 @@ console.log("server running at "+listenTo+":"+port);
 
 
 io.sockets.on('connection', function (socket) {
-  socket.emit('news', { hello: 'world' });
-  socket.on('my other event', function (data) {
-    console.log(data);
+console.log("NEW CLIENT CONNECTION:"+socket.id);
+ socket.on('message', function (data) {
+    socket.broadcast.emit('message',data);
   });
 });
+
+
 
 ////////////////////////////////////////////////
 //UTILS part
