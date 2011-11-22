@@ -38,6 +38,8 @@ function _static() {
 });
 }
 
+console.log("CHANGE!!!!");
+
 // note, io.listen() will create a http server for you
 
 GET["/static/.*"]= _static;
