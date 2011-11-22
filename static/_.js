@@ -1,27 +1,32 @@
 
  _ =  function (params) {
 
-var serverUrl=params.serverUrl;'http://localhost'
+var serverUrl=params.serverUrl;
 
 $(document).ready(function(){
 $("#title").html("Welcome to _<br>");
 socket = io.connect(serverUrl);
+var sessionId;
 $("#input_message").focus();
 
 
 $("#input_message").keyup(function(event){
   if(event.which == 13){
-  toSend=name + ">" +$("#input_message").val();
+  toSend = {};
+  toSend.message=name + ">" +$("#input_message").val();
   $("#input_message").val("");
-  appendMessage("#chat_area",toSend);
+  appendMessage("#chat_area",toSend.message);
   socket.emit('message',toSend);
   }
    
 });
 
-  
+  console.log(socket)
   socket.on("message", function (data) {
-  appendMessage("#chat_area",data)
+  if(typeof (sessionId) === "undefined") {sessionId=socket.socket.sessionid;}
+  if(data.source != sessionId){
+  console.log(sessionId + " vs "+data.source)
+  appendMessage("#chat_area",data.message)}
 });
 
 });

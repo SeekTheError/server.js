@@ -84,21 +84,22 @@ function handler(req, res) {
 }
 console.log("server running at "+listenTo+":"+port);
 
-
+//io.sockets.in("GLOBAL ROOM").emit('message',{data:});
 io.sockets.on('connection', function (socket) {
+if(typeof (socket.rooms) === "undefined") socket.rooms=new Array(); 
+console.log(socket)
+socket.rooms.push("GLOBAL ROOM");
 socket.join("GLOBAL ROOM");
-console.log("NEW CLIENT CONNECTION:");
-console.log(socket);
 
+io.sockets.in("GLOBAL ROOM").emit('message',"new user");
 socket.on('join room', function (data) {
-    socket.join(data.roomId);
-    console.log(socket);
+   socket.rooms.push("GLOBAL ROOM");
   });
 
 socket.on('message', function (data) {
-console.log("MESSAGE");
-console.log(socket.manager.rooms);
-    for ( r in socket.rooms){
+    var rooms =socket.rooms;
+    data.source = socket.id;
+    for ( r in rooms){
     io.sockets.in(rooms[r]).emit('message',data);
     }
   });
