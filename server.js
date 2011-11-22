@@ -86,9 +86,21 @@ console.log("server running at "+listenTo+":"+port);
 
 
 io.sockets.on('connection', function (socket) {
-console.log("NEW CLIENT CONNECTION:"+socket.id);
- socket.on('message', function (data) {
-    socket.broadcast.emit('message',data);
+socket.join("GLOBAL ROOM");
+console.log("NEW CLIENT CONNECTION:");
+console.log(socket);
+
+socket.on('join room', function (data) {
+    socket.join(data.roomId);
+    console.log(socket);
+  });
+
+socket.on('message', function (data) {
+console.log("MESSAGE");
+console.log(socket.manager.rooms);
+    for ( r in socket.rooms){
+    io.sockets.in(rooms[r]).emit('message',data);
+    }
   });
 });
 
